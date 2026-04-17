@@ -1,5 +1,4 @@
-"""Compare parsed .env files and report missing or mismatched keys."""
-
+"""Compare two parsed env dictionaries and produce a structured diff."""
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
@@ -7,65 +6,50 @@ from typing import Dict, List, Optional
 @dataclass
 class KeyDiff:
     key: str
-    status: str  # 'missing_in', 'mismatch'
-    missing_in: Optional[str] = None
-    values: Optional[Dict[str, str]] = None
+    missing_in: Optional[str] = None   # env name where key is absent
+    value_a: Optional[str] = None
+    value_b: Optional[str] = None
 
     def __str__(self) -> str:
-        if self.status == "missing_in":
-            return f"[MISSING] '{self.key}' not found in '{self.missing_in}'"
-        elif self.status == "mismatch":
-            parts = ", ".join(f"{env}={v!r}" for env, v in (self.values or {}).items())
-            return f"[MISMATCH] '{self.key}': {parts}"
-        return f"[UNKNOWN] '{self.key}'"
+        if self.missing_in:
+            return f"Key '{self.key}' missing in '{self.missing_in}'"
+        return f"Key '{self.key}' has mismatched values: {self.value_a!r} vs {self.value_b!r}"
 
 
 @dataclass
 class CompareResult:
-    env_names: List[str]
-    diffs: List[KeyDiff] = field(default_factory=list)
+    missing_keys: List[KeyDiff] = field(default_factory=list)
+    mismatched_values: List[KeyDiff] = field(default_factory=list)
+
+    def has_differences(self) -> bool:
+        return bool(self.missing_keys or self.mismatched_values)
 
     @property
-    def has_differences(self) -> bool:
-        return len(self.diffs) > 0
-
-    def missing_keys(self) -> List[KeyDiff]:
-        return [d for d in self.diffs if d.status == "missing_in"]
-
-    def mismatched_keys(self) -> List[KeyDiff]:
-        return [d for d in self.diffs if d.status == "mismatch"]
+    def all_diffs(self) -> List[KeyDiff]:
+        return self.missing_keys + self.mismatched_values
 
 
-def compare_envs(
-    envs: Dict[str, Dict[str, str]],
-    ignore_values: bool = False,
+def compare(
+    env_a: Dict[str, str],
+    env_b: Dict[str, str],
+    name_a: str = "env_a",
+    name_b: str = "env_b",
 ) -> CompareResult:
-    """Compare multiple parsed env dicts.
+    """Compare two env dicts and return a CompareResult."""
+    missing: List[KeyDiff] = []
+    mismatched: List[KeyDiff] = []
 
-    Args:
-        envs: mapping of env_name -> {key: value}
-        ignore_values: if True, only report missing keys, not mismatches
-
-    Returns:
-        CompareResult with all detected diffs
-    """
-    env_names = list(envs.keys())
-    result = CompareResult(env_names=env_names)
-
-    all_keys: set = set()
-    for env_dict in envs.values():
-        all_keys.update(env_dict.keys())
+    all_keys = set(env_a) | set(env_b)
 
     for key in sorted(all_keys):
-        present_in = {name: envs[name][key] for name in env_names if key in envs[name]}
-        absent_from = [name for name in env_names if key not in envs[name]]
+        in_a = key in env_a
+        in_b = key in env_b
 
-        for missing_env in absent_from:
-            result.diffs.append(KeyDiff(key=key, status="missing_in", missing_in=missing_env))
+        if in_a and not in_b:
+            missing.append(KeyDiff(key=key, missing_in=name_b))
+        elif in_b and not in_a:
+            missing.append(KeyDiff(key=key, missing_in=name_a))
+        elif env_a[key] != env_b[key]:
+            mismatched.append(KeyDiff(key=key, value_a=env_a[key], value_b=env_b[key]))
 
-        if not ignore_values and len(absent_from) == 0:
-            unique_values = set(present_in.values())
-            if len(unique_values) > 1:
-                result.diffs.append(KeyDiff(key=key, status="mismatch", values=present_in))
-
-    return result
+    return CompareResult(missing_keys=missing, mismatched_values=mismatched)
