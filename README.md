@@ -51,6 +51,12 @@ Use the `--strict` flag to exit with a non-zero code if any differences are foun
 envdiff .env .env.production --strict
 ```
 
+Ignore specific keys during comparison:
+
+```bash
+envdiff .env .env.production --ignore SECRET_KEY --ignore BUILD_DATE
+```
+
 ---
 
 ## Options
@@ -58,7 +64,7 @@ envdiff .env .env.production --strict
 | Flag | Description |
 |------|-------------|
 | `--strict` | Exit with code 1 if differences are found |
-| `--ignore KEY` | Ignore a specific key during comparison |
+| `--ignore KEY` | Ignore a specific key during comparison (repeatable) |
 | `--quiet` | Suppress output, only use exit codes |
 
 ---
