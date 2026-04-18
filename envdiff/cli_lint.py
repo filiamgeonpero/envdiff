@@ -20,7 +20,18 @@ def build_lint_parser(sub) -> None:
     p.set_defaults(func=run_lint)
 
 
+def _print_issues(filepath: str, result) -> None:
+    """Print lint issues for a single file to stdout."""
+    if not result.issues:
+        print(f"{filepath}: OK")
+        return
+    print(f"{filepath}:")
+    for issue in result.issues:
+        print(f"  {issue}")
+
+
 def run_lint(args: Namespace) -> int:
+    """Run the lint command, returning an exit code."""
     any_error = False
     any_warning = False
 
@@ -31,13 +42,7 @@ def run_lint(args: Namespace) -> int:
             print(f"error: file not found: {filepath}", file=sys.stderr)
             return 2
 
-        if not result.issues:
-            print(f"{filepath}: OK")
-            continue
-
-        print(f"{filepath}:")
-        for issue in result.issues:
-            print(f"  {issue}")
+        _print_issues(filepath, result)
 
         if result.errors:
             any_error = True
