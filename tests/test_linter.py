@@ -75,3 +75,9 @@ def test_ok_true_when_only_warnings(tmp_path):
     result = lint_env_file(path)
     assert result.ok
     assert len(result.warnings) > 0
+
+
+def test_lint_nonexistent_file_raises():
+    """lint_env_file should raise FileNotFoundError for a missing file."""
+    with pytest.raises(FileNotFoundError):
+        lint_env_file("/nonexistent/path/.env")
