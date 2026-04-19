@@ -36,6 +36,24 @@ class ProfileResult:
         ]
         return "\n".join(lines)
 
+    def as_dict(self) -> Dict[str, object]:
+        """Return the profile result as a plain dictionary.
+
+        Useful for serialisation (e.g. JSON export) or programmatic
+        comparisons between multiple ProfileResult instances.
+        """
+        return {
+            "env_name": self.env_name,
+            "total_keys": self.total_keys,
+            "empty_values": self.empty_values,
+            "sensitive_keys": self.sensitive_keys,
+            "url_values": self.url_values,
+            "numeric_values": self.numeric_values,
+            "boolean_values": self.boolean_values,
+            "uppercase_keys": self.uppercase_keys,
+            "lowercase_keys": self.lowercase_keys,
+        }
+
 
 def profile_env(env_name: str, env: Dict[str, str]) -> ProfileResult:
     result = ProfileResult(env_name=env_name, total_keys=len(env))
