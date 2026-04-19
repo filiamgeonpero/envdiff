@@ -33,6 +33,10 @@ class AnnotationResult:
         mismatch = len(self.by_status("mismatch"))
         return f"ok={ok} missing={missing} mismatch={mismatch}"
 
+    def by_env_missing(self, env_name: str) -> List[AnnotatedKey]:
+        """Return all keys that are missing in the given environment."""
+        return [k for k in self.keys if env_name in k.envs_missing]
+
 
 def annotate_result(result: CompareResult) -> AnnotationResult:
     """Build an AnnotationResult from a CompareResult."""
