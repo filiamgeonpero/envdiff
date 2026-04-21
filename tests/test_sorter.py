@@ -56,6 +56,16 @@ def test_sort_by_diff_type_missing_first():
     assert sorted_result.diffs[1].key == "B_KEY"
 
 
+def test_sort_by_diff_type_reverse():
+    result = make_result([
+        make_diff("A_KEY", is_missing=True),
+        make_diff("B_KEY", is_missing=False),
+    ])
+    sorted_result = sort_result(result, SortOptions(by="diff_type", reverse=True))
+    assert sorted_result.diffs[0].key == "B_KEY"
+    assert sorted_result.diffs[1].key == "A_KEY"
+
+
 def test_sorted_result_preserves_envs():
     result = make_result([make_diff("X")])
     sorted_result = sort_result(result)
