@@ -62,3 +62,11 @@ def test_single_env_roundtrip():
     result = merge_envs({"only": {"A": "1", "B": "2"}})
     assert result.keys == ["A", "B"]
     assert dict(result.values["A"])["only"] == "1"
+
+
+def test_template_fill_missing_uses_placeholder():
+    """Keys missing in some envs should use the placeholder when fill_missing is True."""
+    result = merge_envs({"a": {"SHARED": "x", "ONLY_A": "y"}, "b": {"SHARED": "z"}})
+    opts = MergeOptions(fill_missing=True, placeholder="CHANGE_ME", comment_source=False)
+    template = result.as_template(opts)
+    assert "ONLY_A=CHANGE_ME" in template
